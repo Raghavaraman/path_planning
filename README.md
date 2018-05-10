@@ -1,6 +1,6 @@
 # CarND-Path-Planning-Project
-###Self-Driving Car Engineer Nanodegree Program
----   
+### Self-Driving Car Engineer Nanodegree Program
+ 
 The goal of this project was to control the speed and lane of a car given the sensor fusion data of cars around me via the simulator. The steps that I followed for the development were as follows:
 
 1. I made the car go at a speed less than the speed limit of 50mph.
