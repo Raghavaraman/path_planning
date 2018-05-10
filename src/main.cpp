@@ -213,11 +213,10 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  int lane = 1;
 
   double ref_vel = 0.0;
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane, &ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy, &ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -225,7 +224,7 @@ int main() {
     //auto sdata = string(data).substr(0, length);
     //cout << sdata << endl;
     if (length && length > 2 && data[0] == '4' && data[1] == '2') {
-
+	  int flag;
       auto s = hasData(data);
 
       if (s != "") {
@@ -240,7 +239,8 @@ int main() {
           	double car_x = j[1]["x"];
           	double car_y = j[1]["y"];
           	double car_s = j[1]["s"];
-          	double car_d = j[1]["d"];
+			double car_d = j[1]["d"];
+			int lane = lanenumber(car_d); 
           	double car_yaw = j[1]["yaw"];
           	double car_speed = j[1]["speed"];
 
@@ -254,13 +254,16 @@ int main() {
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
-          	int prev_size = previous_path_x.size();
+			  int prev_size = previous_path_x.size();
+
 
             if (prev_size > 0)
 			{
 				car_s = end_path_s;
 			}
 			bool too_close = false;
+			bool left_too_close = false;
+			bool right_too_close = false;
 
 			for(int i=0;i<sensor_fusion.size();i++){
                 float d = sensor_fusion[i][6];
@@ -271,15 +274,54 @@ int main() {
                     double check_car_s = sensor_fusion[i][5];
 
                     check_car_s += ((double)prev_size*0.02*check_speed);
-
-                    if(check_car_s < car_s && ((check_car_s-car_s)< 30)){
+					
+                    if(check_car_s > car_s && ((check_car_s-car_s)< 30)){
                        //ref_vel = 29.5;
                        too_close = true;
-                       }
-                }
-			}
+					   }
+				
+					} else if (lane != 2 && d > (4*(lane+1)) && d < (4*(lane+2))) {
+						// check car in my right lane
+						double vx = sensor_fusion[i][3];
+						double vy = sensor_fusion[i][4];
+						double check_speed = sqrt(vx*vx+vy*vy);
+						double check_car_s = sensor_fusion[i][5];
+						check_car_s += ((double)prev_size*0.02*check_speed); // if using previous points can project s value out
+						// check s values greater than mine and s gap
+						
+						if ((check_car_s > (car_s - 30)) && (check_car_s < (car_s + 30))) {
+							// lower reference velocity so we don't crash into the car in front of us
+							right_too_close = true;
+						}
+					} else if (lane != 0 && d > (4*(lane-1)) && d < (4*(lane+0))) {
+						// check car in my left lane
+						double vx = sensor_fusion[i][3];
+						double vy = sensor_fusion[i][4];
+						double check_speed = sqrt(vx*vx+vy*vy);
+						double check_car_s = sensor_fusion[i][5];
+						check_car_s += ((double)prev_size*0.02*check_speed); // if using previous points can project s value out
+						// check s values greater than mine and s gap
+						
+						if ((check_car_s > (car_s - 30)) && (check_car_s < (car_s + 30))) {
+							// lower reference velocity so we don't crash into the car in front of us
+							left_too_close = true;
+						}
+					}
+				}
 			if(too_close){
-                ref_vel -= 0.224;
+				ref_vel -= 0.224;
+				if (( lane == 1) && !left_too_close){
+					lane = 0;
+				}
+				else if (( lane == 1) && !right_too_close) {
+					lane = 2;
+				}
+				else if (( lane == 0) && !right_too_close){
+					lane = 1;
+				}
+				else if (( lane == 2) && !left_too_close){
+					lane = 1;
+				}
 			}
 			else if (ref_vel < 49.5){
                 ref_vel += 0.224;

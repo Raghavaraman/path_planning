@@ -1,4 +1,4 @@
-# Install script for directory: /mnt/c/Users/raghava.s/Downloads/term3/CarND-Path-Planning-Project-master
+# Install script for directory: /mnt/s/2018/autonomous car/term3/path_planning
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/mnt/c/Users/raghava.s/Downloads/term3/CarND-Path-Planning-Project-master/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/mnt/s/2018/autonomous car/term3/path_planning/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
